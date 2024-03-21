@@ -1,0 +1,31 @@
+local LargeRAP = 11000; local SmallRAP = 2800
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local Player = game:GetService("Players").LocalPlayer
+local RepStor = game:GetService("ReplicatedStorage")
+local Library = require(RepStor.Library)
+local HRP = Player.Character.HumanoidRootPart
+local saveMod = require(RepStor.Library.Client.Save)
+local BreakMod = require(RepStor.Library.Client.BreakableCmds)
+local Slingshot = getsenv(Player.PlayerScripts.Scripts.Game.Misc.Slingshot)
+local RAPValues = getupvalues(require(RepStor.Library).DevRAPCmds.Get)[1]
+hookfunction(require(game.ReplicatedStorage.Library.Client.PlayerPet).CalculateSpeedMultiplier, function() return 250 end)
+function getInfo(name) return saveMod.Get()[name] end 
+function getTool() return Player.Character:FindFirstChild("WEAPON_"..Player.Name, true) end
+function equipTool(toolName) return Library.Network.Invoke(toolName.."_Toggle") end
+function getCurrentZone() return Library["MapCmds"].GetCurrentZone() end
+function sendNotif(msg)
+	local message = {content = msg}
+	local jsonMessage = HttpService:JSONEncode(message)
+	local success, webMessage = pcall(function() 
+		HttpService:PostAsync(getgenv().MoneyPrinter.webURL, jsonMessage) 
+	end)
+	if not success then 
+		local response = request({Url = getgenv().MoneyPrinter.webURL,Method = "POST",Headers = {["Content-Type"] = "application/json"},Body = jsonMessage})
+	end
+end
+
+if getgenv().MoneyPrinter.sendWeb then
+    sendNotif("```asciidoc\n[ "..Player.Name.." Earned ]\n‐ "..tostring(endGifts - startGifts).." Small :: "..tostring(getTotalRAP((endGifts - startGifts) * SmallRAP)).." \n‐ "..tostring(endLarge - startLarge).." Large :: "..tostring(getTotalRAP((endLarge - startLarge) * LargeRAP)).." \n\n[ Total / Server ]\n‐ "..tostring(endGifts).." Small :: "..tostring(getTotalRAP(endGifts * SmallRAP)).." \n‐ "..tostring(endLarge).." Large :: "..tostring(getTotalRAP(endLarge * LargeRAP)).." \n- took "..tostring(currentTime - startTime).." seconds \n- had "..tostring(startBalloons).." balloons\n```")
+end
+repeat game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, getServer().id, Player) task.wait(3) until not game.PlaceId
